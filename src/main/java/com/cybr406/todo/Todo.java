@@ -1,15 +1,19 @@
 package com.cybr406.todo;
 
+import javax.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class Todo {
 
+
+
+
     private Long id;
-
+    @NotBlank(message = "Cant be null")
     private String author;
-
+    @NotBlank(message = "Cant be null")
     private String details;
 
     private List<Task> tasks = new ArrayList<>();
