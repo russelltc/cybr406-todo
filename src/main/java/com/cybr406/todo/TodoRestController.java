@@ -1,32 +1,34 @@
 package com.cybr406.todo;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @RestController public class TodoRestController {
     @Autowired()
     InMemoryTodoRepository inMemoryTodoRepository;
+    @Autowired()
+    TodoJpaRepository todorep;
+    @Autowired()
+    TaskJpaRepository taskrep;
 
 
     @PostMapping("/todos")
     public ResponseEntity<Todo> createTodo(@Valid @RequestBody Todo todoObject) {
-        Todo createdToDo = inMemoryTodoRepository.create(todoObject);
-        if (todoObject.getAuthor().isEmpty() || todoObject.getDetails().isEmpty()) {
-            return new ResponseEntity<>(createdToDo, HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>(createdToDo, HttpStatus.CREATED);
+       Todo created = todorep.save(todoObject);
+       return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
-    @GetMapping ("/todos/{todo}")
-    public ResponseEntity<Todo> findTodo(@PathVariable long todo){
+    @GetMapping ("/todos/{id}")
+    public ResponseEntity<Todo> findTodo(@PathVariable long id){
 
-        Optional<Todo> details = inMemoryTodoRepository.find(todo);
+        Optional<Todo> details = todorep.findById(id);
 
         if (details.isPresent()){
             Todo information = details.get();
@@ -40,17 +42,28 @@ import java.util.Optional;
         }
     }
     @GetMapping("/todos")
-    public ResponseEntity<List<Todo>> findall(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size)
+    public Page<Todo> findAll(Pageable page)
+
     {
-    List<Todo> list = inMemoryTodoRepository.findAll(page, size);
-    return new ResponseEntity<>(list, HttpStatus.OK);
+    return todorep.findAll(page);
     }
+
     @PostMapping("/todos/{id}/tasks")
     public ResponseEntity<Todo> addTask(@PathVariable long id, @RequestBody Task Task){
 
-        Todo todo = inMemoryTodoRepository.addTask(id, Task);
+       Optional<Todo> addingTask = todorep.findById(id);
 
-        return new ResponseEntity<>(todo, HttpStatus.CREATED);
+       if (addingTask.isPresent()){
+           Todo todo = addingTask.get();
+           todo.getTasks().add(Task);
+           Task.setTodo(todo);
+           taskrep.save(Task);
+           return new ResponseEntity<>(todo, HttpStatus.CREATED);
+       }
+
+    else{
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+       }
     }
     @DeleteMapping("/todos/{id}")
     public ResponseEntity Delete(@PathVariable long id){
