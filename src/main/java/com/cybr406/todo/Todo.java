@@ -23,7 +23,7 @@ public class Todo {
     @OneToMany(mappedBy = "todo")
     private List<Task> tasks = new ArrayList<>();
 
-    @Id
+
     public Long getId() {
         return id;
     }
